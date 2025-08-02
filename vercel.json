@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/search.js": {
+      "maxDuration": 10
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/search.js"
+    }
+  ]
+}
