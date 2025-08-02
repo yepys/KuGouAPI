@@ -1,7 +1,8 @@
 {
+  "version": 2,
   "functions": {
     "api/search.js": {
-      "maxDuration": 10
+      "maxDuration": 30
     }
   },
   "routes": [
@@ -9,5 +10,6 @@
       "src": "/(.*)",
       "dest": "/api/search.js"
     }
-  ]
+  ],
+  "outputDirectory": null
 }
