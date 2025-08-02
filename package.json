@@ -1,18 +1,19 @@
 {
   "name": "kugou-music-api",
-  "version": "1.0.0",
-  "description": "Vercel serverless API wrapper for Kugou music search & detail",
+  "version": "1.2.0",
+  "description": "酷狗音乐聚合搜索 API（龙珠源）",
   "main": "api/index.js",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build step required'"
+    "dev": "nodemon api/index.js",
+    "start": "node api/index.js"
   },
   "dependencies": {
-    "axios": "^1.6.8",
-    "express": "^5.1.0",
-    "helmet": "^7.1.0"
+    "axios": "^1.7.2",
+    "chalk": "^4.1.2",
+    "express": "^4.19.2",
+    "joi": "^17.13.3"
   },
   "devDependencies": {
-    "vercel": "^34.4.0"
+    "nodemon": "^3.1.4"
   }
 }
