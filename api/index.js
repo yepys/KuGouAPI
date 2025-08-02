@@ -139,33 +139,138 @@ app.get('/search', async (req, res) => {
 app.get('/docs', (_, res) => {
   res.send(`
   <!DOCTYPE html>
-  <html>
-  <head>
-    <title>🎵 API 文档</title>
-    <style>
-      body { font-family: Arial, sans-serif; padding: 20px; }
-      h1 { color: #333; }
-      .endpoint { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }
-      code { background: #eee; padding: 2px 5px; border-radius: 3px; }
-    </style>
-  </head>
-  <body>
-    <h1>🎵 酷狗音乐搜索 API</h1>
-    
-    <h2>搜索接口</h2>
-    <div class="endpoint">
-      <code>GET /search?msg={关键词}&num={数量}&quality={音质}</code>
-      <p>示例: <a href="/search?msg=周杰伦&num=5" target="_blank">/search?msg=周杰伦&num=5</a></p>
-    </div>
-    
-    <h2>参数说明</h2>
-    <ul>
-      <li><strong>msg</strong>: 搜索关键词 (必填)</li>
-      <li><strong>num</strong>: 返回数量 (1-100, 默认30)</li>
-      <li><strong>quality</strong>: 音质 (128/320/flac/viper_atmos, 默认flac)</li>
-    </ul>
-  </body>
-  </html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>🎵 酷狗音乐搜索 API 文档</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <!-- 代码高亮 -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"/>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f7f9fb;
+      --primary: #2563eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+      background:var(--bg);
+      color:var(--text);
+      line-height:1.6;
+      padding:2rem;
+    }
+    h1,h2{color:var(--primary)}
+    h1{margin-bottom:1rem;font-size:2rem}
+    h2{margin:2rem 0 .5rem;font-size:1.5rem}
+    .endpoint{
+      background:var(--surface);
+      border-left:4px solid var(--primary);
+      padding:.75rem 1rem;
+      margin:.75rem 0;
+      border-radius:.5rem;
+      font-family:monospace;
+      font-size:.9rem;
+    }
+    pre{
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:.5rem;
+      padding:1rem;
+      overflow-x:auto;
+      font-size:.875rem;
+    }
+    .copy-btn{
+      float:right;
+      background:var(--primary);
+      color:#fff;
+      border:none;
+      padding:.25rem .5rem;
+      border-radius:.25rem;
+      cursor:pointer;
+      font-size:.75rem;
+    }
+    .copy-btn:hover{opacity:.9}
+    table{border-collapse:collapse;width:100%;margin-top:.5rem}
+    th,td{padding:.5rem;border-bottom:1px solid var(--border)}
+    th{text-align:left;color:var(--muted)}
+    footer{margin-top:3rem;font-size:.75rem;color:var(--muted)}
+    @media(max-width:600px){
+      body{padding:1rem}
+      h1{font-size:1.6rem}
+      pre{font-size:.8rem}
+    }
+  </style>
+</head>
+<body>
+
+<h1>🎵 酷狗音乐搜索 API 文档</h1>
+<p>简洁、免费、跨域可用的音乐搜索接口，基于龙珠源。</p>
+
+<h2>1. 接口地址</h2>
+<div class="endpoint">GET <b>/search</b></div>
+
+<h2>2. 请求参数</h2>
+<table>
+  <tr><th>字段</th><th>类型</th><th>必填</th><th>默认值</th><th>说明</th></tr>
+  <tr><td>msg</td><td>string</td><td>✅</td><td>-</td><td>关键词</td></tr>
+  <tr><td>num</td><td>number</td><td>-</td><td>30</td><td>返回条数 (1-100)</td></tr>
+  <tr><td>quality</td><td>string</td><td>-</td><td>flac</td><td>音质：128 / 320 / flac</td></tr>
+</table>
+
+<h2>3. 调用示例</h2>
+<button class="copy-btn" data-clipboard-text="curl 'https://kugouapi.xtyun.click/search?msg=跳楼机&num=10&quality=flac'">复制</button>
+<pre><code class="language-bash">curl 'https://kugouapi.xtyun.click/search?msg=跳楼机&num=10&quality=flac'</code></pre>
+
+<h2>4. 返回示例</h2>
+<button class="copy-btn" data-clipboard-text='{"code":200,"message":"success","total":2,"data":[{"id":1,"title":"跳楼机","singer":"LBI利比","duration":"3:21","cover":"...","music_url":"...","lyrics":"暂无"}]}'>复制</button>
+<pre><code class="language-json">{
+  "code": 200,
+  "message": "success",
+  "total": 2,
+  "data": [
+    {
+      "id": 1,
+      "title": "跳楼机",
+      "singer": "LBI利比",
+      "duration": "3:21",
+      "cover": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&q=60",
+      "music_url": "https://xxx.kg.qq.com/...",
+      "lyrics": "暂无歌词"
+    }
+  ]
+}</code></pre>
+
+<h2>5. 错误码</h2>
+<ul>
+  <li><b>400</b> - 参数缺失 / 不合法</li>
+  <li><b>404</b> - 无结果</li>
+  <li><b>500</b> - 服务器内部错误</li>
+</ul>
+
+<h2>6. FAQ</h2>
+<ul>
+  <li><b>跨域？</b> 已自动开启 CORS。</li>
+  <li><b>音乐无法播放？</b> 上游偶尔失效，可稍后重试。</li>
+</ul>
+
+<footer>
+  &copy; 2024 KuGou API Team · 仅供学习交流
+</footer>
+
+<!-- 复制 & 高亮 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script>new ClipboardJS('.copy-btn');</script>
+</body>
+</html>
   `);
 });
 
