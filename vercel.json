@@ -1,14 +1,11 @@
 {
   "version": 2,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api" }
+  ],
   "functions": {
-    "api/search.js": {
+    "api/index.js": {
       "maxDuration": 30
     }
-  },
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/api/search.js"
-    }
-  ]
+  }
 }
