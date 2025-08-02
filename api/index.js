@@ -275,7 +275,7 @@ app.get('/docs', (_, res) => {
 });
 
 // 根路径重定向到文档
-app.get('/', (_, res) => res.redirect('/docs'));
+app.get('/', (_, res) => res.redirect('/docs/kugouapi'));
 
 // Vercel 支持
 module.exports = app;
