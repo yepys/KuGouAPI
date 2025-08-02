@@ -136,7 +136,7 @@ app.get('/search', async (req, res) => {
 });
 
 // 文档路由
-app.get('/docs', (_, res) => {
+app.get('/docs/kugouapi', (_, res) => {
   res.send(`
   <!DOCTYPE html>
 <html lang="zh-CN">
