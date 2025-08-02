@@ -8,7 +8,9 @@
     "build": "echo 'No build step required'"
   },
   "dependencies": {
-    "axios": "^1.7.2"
+    "axios": "^1.6.8",
+    "express": "^5.1.0",
+    "helmet": "^7.1.0"
   },
   "devDependencies": {
     "vercel": "^34.4.0"
