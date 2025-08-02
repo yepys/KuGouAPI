@@ -204,7 +204,4 @@ app.get('/docs', (_, res) => {
 app.get('/', (_, res) => res.redirect('/docs'));
 
 // ---------- 启动 ----------
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => log.ok(`Server running → http://localhost:${PORT}`));
-
 module.exports = app;
