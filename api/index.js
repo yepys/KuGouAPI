@@ -1,135 +1,176 @@
-/**
- * 🎵 酷狗音乐聚合搜索 API（龙珠源）
- * 部署：vercel / docker / 本地皆可
- */
-
 require('dotenv').config();
 const express = require('express');
-const axios   = require('axios');
-const chalk   = require('chalk');
-const Joi     = require('joi');
+const axios = require('axios');
+const chalk = require('chalk');
+const Joi = require('joi');
 
-const app  = express();
-const API  = 'https://www.hhlqilongzhu.cn/api/dg_kugouSQ.php';
+const app = express();
+const API = 'https://www.hhlqilongzhu.cn/api/dg_kugouSQ.php';
 const HEADERS = {
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
   Accept: 'application/json, text/plain, */*',
   Referer: 'https://www.hhlqilongzhu.cn/'
 };
 
-/* ---------- 工具 ---------- */
 const log = {
-  info:  (m) => console.log(chalk.cyan(`ℹ  ${m}`)),
-  ok:    (m) => console.log(chalk.green(`✅ ${m}`)),
-  warn:  (m) => console.log(chalk.yellow(`⚠  ${m}`)),
+  info: (m) => console.log(chalk.cyan(`ℹ ${m}`)),
+  ok: (m) => console.log(chalk.green(`✅ ${m}`)),
+  warn: (m) => console.log(chalk.yellow(`⚠ ${m}`)),
   error: (m) => console.log(chalk.red(`❌ ${m}`))
 };
 
+// 验证参数
 const searchSchema = Joi.object({
   msg: Joi.string().min(1).max(64).required(),
   num: Joi.number().integer().min(1).max(100).default(30),
-  quality: Joi.string().valid('128', '320', 'flac').default('flac')
+  quality: Joi.string().valid('128', '320', 'flac', 'viper_atmos').default('flac')
 });
 
-const FALLBACK_COVER =
-  'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&q=60';
+// 获取歌曲详情函数
+const fetchSongDetails = async (song, msg, quality) => {
+  try {
+    const params = {
+      msg,
+      n: song.n,
+      type: 'json',
+      quality
+    };
 
-/* ---------- 主接口 ---------- */
+    const { data } = await axios.get(API, {
+      params,
+      headers: HEADERS,
+      timeout: 8000
+    });
+
+    // 处理不同结构的API响应
+    const songData = Array.isArray(data) ? data[0] : data;
+    return {
+      id: song.n,
+      title: song.title || '未知标题',
+      singer: song.singer || '未知歌手',
+      duration: song.Duration || '00:00',
+      cover: songData.cover || songData.album_cover || '',
+      music_url: songData.url || songData.music_url || '',
+      lyrics: songData.lyrics || songData.song_lyrics || '📃 暂无歌词'
+    };
+  } catch (error) {
+    log.warn(`获取歌曲详情失败 (n=${song.n}): ${error.message}`);
+    return {
+      id: song.n,
+      title: song.title || '未知标题',
+      singer: song.singer || '未知歌手',
+      duration: song.Duration || '00:00',
+      cover: '',
+      music_url: '',
+      lyrics: '📃 获取歌词失败'
+    };
+  }
+};
+
+// 主搜索接口
 app.get('/search', async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
+  // 验证参数
   const { error, value } = searchSchema.validate(req.query);
   if (error) {
-    return res.status(400).json({ code: 400, message: error.details[0].message });
+    return res.status(400).json({ 
+      code: 400, 
+      message: error.details[0].message 
+    });
   }
 
   try {
     const { msg, num, quality } = value;
+    log.info(`搜索请求: ${msg} | 数量: ${num} | 音质: ${quality}`);
+
+    // 第一步：获取歌曲列表
+    const searchParams = { 
+      msg, 
+      n: '', 
+      num, 
+      type: 'json', 
+      quality 
+    };
+
     const { data } = await axios.get(API, {
-      params: { msg, n: '', num, type: 'json', quality },
+      params: searchParams,
       headers: HEADERS,
-      timeout: 15000
+      timeout: 10000
     });
 
     if (!Array.isArray(data?.data) || data.data.length === 0) {
-      return res.status(404).json({ code: 404, message: '未找到相关歌曲' });
+      return res.status(404).json({ 
+        code: 404, 
+        message: '未找到相关歌曲' 
+      });
     }
 
-    const payload = data.data.map((s) => ({
-      id: s.n || 0,
-      title: s.title || '未知标题',
-      singer: s.singer || '未知歌手',
-      duration: s.Duration || '00:00',
-      cover: s.cover || s.album_cover || FALLBACK_COVER,
-      music_url: s.url || s.music_url || '',
-      lyrics: s.lyrics || s.song_lyrics || '📃 暂无歌词'
-    }));
+    log.info(`找到 ${data.data.length} 首歌曲，开始获取详情...`);
 
-    res.json({ code: 200, message: 'success', total: payload.length, data: payload });
-    log.ok(`搜索「${msg}」返回 ${payload.length} 条`);
-  } catch (e) {
-    log.error(`搜索接口异常：${e.message}`);
-    res.status(500).json({ code: 500, message: '服务器内部错误' });
+    // 第二步：并发获取每首歌的详情
+    const detailRequests = data.data.map(song => 
+      fetchSongDetails(song, msg, quality)
+    );
+
+    const songs = await Promise.all(detailRequests);
+    const validSongs = songs.filter(song => song.music_url);
+
+    log.ok(`返回 ${validSongs.length} 首有效歌曲`);
+
+    res.json({
+      code: 200,
+      message: 'success',
+      total: validSongs.length,
+      data: validSongs
+    });
+  } catch (error) {
+    log.error(`主接口错误: ${error.message}`);
+    res.status(500).json({ 
+      code: 500, 
+      message: '服务器内部错误',
+      error: error.message 
+    });
   }
 });
 
-/* ---------- 文档 ---------- */
+// 文档路由
 app.get('/docs', (_, res) => {
   res.send(`
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <title>🎵 API 文档</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"/>
-  <style>
-    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial;padding:2rem;background:#1e1e1e;color:#f8f8f2;}
-    h1,h2{color:#66d9ef;}
-    pre{background:#2d2d2d;border-radius:8px;padding:1rem;overflow-x:auto;}
-    code{color:#a6e22e;}
-    .endpoint{background:#3a3a3a;border-left:4px solid #66d9ef;padding:.5rem 1rem;margin:.5rem 0;}
-    a{color:#ae81ff}
-  </style>
-</head>
-<body>
-  <h1>🎵 酷狗音乐聚合搜索 API 文档</h1>
-  <h2>1. 接口地址</h2>
-  <div class="endpoint"><b>GET</b> /search</div>
-  <h2>2. 请求参数</h2>
-  <pre><code class="language-json">{
-  "msg": "关键词（必填）",
-  "num": "返回条数(1-100, 默认30)",
-  "quality": "音质(128/320/flac, 默认flac)"
-}</code></pre>
-  <h2>3. 调用示例</h2>
-  <pre><code class="language-bash">curl "https://your-domain.vercel.app/search?msg=唯一&num=5"</code></pre>
-  <h2>4. 返回示例</h2>
-  <pre><code class="language-json">{
-  "code": 200,
-  "message": "success",
-  "total": 5,
-  "data": [
-    {
-      "id": 1,
-      "title": "唯一",
-      "singer": "王力宏",
-      "duration": "4:22",
-      "cover": "https://images.unsplash.com/...",
-      "music_url": "https://xxx.kg.qq.com/...",
-      "lyrics": "[00:00.00] 我的天空多么的清晰..."
-    }
-  ]
-}</code></pre>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-</body>
-</html>`);
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>🎵 API 文档</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 20px; }
+      h1 { color: #333; }
+      .endpoint { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }
+      code { background: #eee; padding: 2px 5px; border-radius: 3px; }
+    </style>
+  </head>
+  <body>
+    <h1>🎵 酷狗音乐搜索 API</h1>
+    
+    <h2>搜索接口</h2>
+    <div class="endpoint">
+      <code>GET /search?msg={关键词}&num={数量}&quality={音质}</code>
+      <p>示例: <a href="/search?msg=周杰伦&num=5" target="_blank">/search?msg=周杰伦&num=5</a></p>
+    </div>
+    
+    <h2>参数说明</h2>
+    <ul>
+      <li><strong>msg</strong>: 搜索关键词 (必填)</li>
+      <li><strong>num</strong>: 返回数量 (1-100, 默认30)</li>
+      <li><strong>quality</strong>: 音质 (128/320/flac/viper_atmos, 默认flac)</li>
+    </ul>
+  </body>
+  </html>
+  `);
 });
 
-/* ---------- 根路径 ---------- */
+// 根路径重定向到文档
 app.get('/', (_, res) => res.redirect('/docs'));
 
-/* ---------- Serverless Export ---------- */
+// Vercel 支持
 module.exports = app;
