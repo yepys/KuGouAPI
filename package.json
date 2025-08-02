@@ -1,0 +1,16 @@
+{
+  "name": "kugou-music-api",
+  "version": "1.0.0",
+  "description": "Vercel serverless API wrapper for Kugou music search & detail",
+  "main": "api/search.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {
+    "axios": "^1.7.2"
+  },
+  "devDependencies": {
+    "vercel": "^34.4.0"
+  }
+}
