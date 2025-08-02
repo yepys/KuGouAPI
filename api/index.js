@@ -57,15 +57,15 @@ app.get('/search', async (req, res) => {
       return res.status(404).json({ code: 404, message: '未找到相关歌曲' });
     }
 
-    const payload = data.data.list.map(s => ({
-  id: s.id || 0,
-  title: s.name || '未知标题',
-  singer: s.artist || '未知歌手',
-  duration: formatTime(s.duration),   // 秒 → mm:ss
-  cover: s.pic || FALLBACK_COVER,
-  music_url: s.mp3Url || '',
-  lyrics: '📃 暂无歌词'
-}));
+    const payload = data.data.map((s) => ({
+      id: s.n || 0,
+      title: s.title || '未知标题',
+      singer: s.singer || '未知歌手',
+      duration: s.Duration || '00:00',
+      cover: s.cover || s.album_cover || FALLBACK_COVER,
+      music_url: s.url || s.music_url || '',
+      lyrics: s.lyrics || s.song_lyrics || '📃 暂无歌词'
+    }));
 
     res.json({ code: 200, message: 'success', total: payload.length, data: payload });
     log.ok(`搜索「${msg}」返回 ${payload.length} 条`);
